@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebService Input</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        input, button { padding: 8px; margin: 5px; }
+        button { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>Enter Two Parameters</h2>
+    <input type="text" id="param1" placeholder="Enter first parameter">
+    <input type="text" id="param2" placeholder="Enter second parameter">
+    <button onclick="callWebService()">Submit</button>
+
+    <h3>Response:</h3>
+    <p id="response"></p>
+
+    <script>
+        function callWebService() {
+            let param1 = document.getElementById("param1").value;
+            let param2 = document.getElementById("param2").value;
+
+            fetch(`http://localhost:8080/greet?param1=${param1}&param2=${param2}`)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("response").innerText = data;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+
+</body>
+</html>
