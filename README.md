@@ -1,2 +1,4 @@
 to run the spring boot application
-mvn spring-boot:run
+
+use this command: 
+**mvn spring-boot:run**
