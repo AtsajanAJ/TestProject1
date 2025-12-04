@@ -1,479 +1,578 @@
-# 🔄 Restaurant Search System - Process Flow Diagram
+# Restaurant Recommendation System - Architecture Diagram
 
-## Complete System Architecture Flow
+## System Architecture Overview
+
+This document provides a comprehensive architecture diagram for the Restaurant Recommendation System for Runners.
+
+## High-Level Architecture
 
 ```mermaid
 graph TB
-    %% User Interface Layer
-    subgraph "Frontend Layer (React.js)"
-        A[User Opens Search Page] --> B{Choose Search Type}
-        B -->|Advanced| C[Advanced Search Form]
-        B -->|Quick| D[Quick Search Form]
-        B -->|Browse All| E[Browse All Button]
-        
-        C --> F[Fill Search Criteria]
-        D --> G[Fill Basic Criteria]
-        E --> H[Load All Restaurants]
-        
-        F --> I[Submit Advanced Search]
-        G --> J[Submit Quick Search]
-        H --> K[Call GetAll API]
+    subgraph "Client Layer"
+        Browser[Web Browser]
+        Mobile[Mobile Browser]
     end
-
-    %% API Layer
-    subgraph "API Service Layer"
-        I --> L[RestaurantSearchAPI.searchRestaurantsAdvanced]
-        J --> M[RestaurantSearchAPI.searchRestaurants]
-        K --> N[RestaurantSearchAPI.getAllRestaurants]
+    
+    subgraph "Frontend Layer - React Application"
+        subgraph "UI Components"
+            Pages[Pages<br/>Home, Recommendations, Search, Profile]
+            AuthComp[Auth Components<br/>Login, Register, ProtectedRoute]
+            CommonComp[Common Components<br/>Header, Footer]
+            SearchComp[Search Components<br/>QuickSearch, AdvancedSearch, Map]
+        end
         
-        L --> O[Build Query Parameters]
-        M --> P[Build Basic Parameters]
-        N --> Q[Call Backend API]
+        subgraph "State Management"
+            AuthContext[AuthContext<br/>JWT Token Management]
+            LocalState[Local State<br/>React Hooks]
+        end
         
-        O --> R[Send HTTP Request with JWT Token]
-        P --> R
-        Q --> R
+        subgraph "Services"
+            APIService[RestaurantSearchAPI<br/>Axios HTTP Client]
+            UserService[UserDataService]
+        end
+        
+        subgraph "Routing"
+            Router[React Router<br/>Client-side Routing]
+        end
     end
-
-    %% Backend Layer
-    subgraph "Backend Layer (Spring Boot)"
-        R --> S{Rate Limiting Check}
-        S -->|Pass| T[RestaurantController]
-        S -->|Fail| U[Return 429 Error]
+    
+    subgraph "Backend Layer - Spring Boot Application"
+        subgraph "API Gateway / Controllers"
+            AuthController[AuthController<br/>/api/auth/*]
+            RestaurantController[RestaurantController<br/>/api/restaurants/*]
+            UserController[UserController<br/>/api/users/*]
+        end
         
-        T --> V{Route Request}
-        V -->|Advanced| W[searchRestaurantsAdvanced]
-        V -->|Basic| X[searchRestaurants]
-        V -->|All| Y[getAllRestaurants]
+        subgraph "Security Layer"
+            SecurityConfig[SecurityConfig<br/>CORS, Authentication]
+            JwtFilter[JwtAuthenticationFilter<br/>Token Validation]
+            RateLimitFilter[RateLimitingFilter<br/>Request Throttling]
+            UserDetailsService[CustomUserDetailsService<br/>User Authentication]
+        end
         
-        W --> Z[RestaurantService.searchRestaurantsAdvanced]
-        X --> AA[RestaurantService.searchRestaurants]
-        Y --> BB[RestaurantService.getAllRestaurants]
+        subgraph "Business Logic / Services"
+            RestaurantService[RestaurantService<br/>Recommendation Engine<br/>SPARQL Queries]
+            UserService[UserService<br/>User Management]
+            JwtUtil[JwtUtil<br/>Token Generation]
+            ValidationUtil[ValidationUtil<br/>Input Validation]
+        end
+        
+        subgraph "Semantic Reasoning"
+            JenaModel[Apache Jena Model<br/>RDF Ontology Loading]
+            Reasoner[Rule Reasoner<br/>Hybrid Reasoning]
+            SPARQL[SPARQL Query Engine<br/>Recommendation Queries]
+        end
+        
+        subgraph "Data Access Layer"
+            RestaurantRepo[RestaurantRepository<br/>JPA Repository]
+            UserRepo[UserRepository<br/>JPA Repository]
+        end
+        
+        subgraph "Configuration"
+            DataLoader[DataLoader<br/>Sample Data]
+            SwaggerConfig[SwaggerConfig<br/>API Documentation]
+            WebConfig[WebServiceConfig<br/>CORS Configuration]
+        end
     end
-
-    %% Data Processing Layer
-    subgraph "Data Processing Layer"
-        Z --> CC[Load RDF Ontology]
-        AA --> CC
-        BB --> CC
-        
-        CC --> DD[Query Restaurant Resources]
-        DD --> EE[Convert RDF to Restaurant Objects]
-        EE --> FF[Apply Search Filters]
-        
-        FF --> GG{Matches Criteria?}
-        GG -->|Yes| HH[Add to Results]
-        GG -->|No| II[Skip Restaurant]
-        
-        HH --> JJ[Continue Processing]
-        II --> JJ
-        JJ --> KK{More Restaurants?}
-        KK -->|Yes| DD
-        KK -->|No| LL[Sort Results]
+    
+    subgraph "Data Layer"
+        H2DB[(H2 In-Memory Database<br/>Users, Restaurants)]
+        RDFOntology[(RDF Ontology File<br/>RestaurantOntology.rdf)]
+        RulesFile[(Rule File<br/>rule.rules)]
     end
-
-    %% Response Layer
-    subgraph "Response Processing"
-        LL --> MM[Create ApiResponse]
-        MM --> NN[Return JSON Response]
-        NN --> OO[Frontend Receives Data]
-        
-        OO --> PP[Update Search Results State]
-        PP --> QQ[Display Restaurant Cards]
-        QQ --> RR[User Sees Results]
+    
+    subgraph "External Services"
+        SwaggerUI[Swagger UI<br/>API Documentation]
+        H2Console[H2 Console<br/>Database Management]
     end
-
-    %% Error Handling
-    subgraph "Error Handling"
-        U --> SS[Show Rate Limit Alert]
-        TT[Authentication Error] --> UU[Redirect to Login]
-        VV[Network Error] --> WW[Show Error Message]
-    end
-
-    %% User Actions
-    subgraph "User Actions on Results"
-        RR --> XX{User Action}
-        XX -->|Save| YY[Save Restaurant to LocalStorage]
-        XX -->|View Details| ZZ[Navigate to Restaurant Detail]
-        XX -->|Search Again| B
-        
-        YY --> AAA[Update Save Button State]
-        ZZ --> BBB[Load Restaurant Detail Page]
-    end
-
-    %% Styling
-    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef api fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef backend fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef data fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef response fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-    classDef error fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef action fill:#f1f8e9,stroke:#33691e,stroke-width:2px
-
-    class A,B,C,D,E,F,G,H,I,J,K frontend
-    class L,M,N,O,P,Q,R api
-    class S,T,U,V,W,X,Y,Z,AA,BB backend
-    class CC,DD,EE,FF,GG,HH,II,JJ,KK,LL data
-    class MM,NN,OO,PP,QQ,RR response
-    class SS,TT,UU,VV,WW error
-    class XX,YY,ZZ,AAA,BBB action
+    
+    Browser --> Pages
+    Mobile --> Pages
+    Pages --> Router
+    Router --> AuthComp
+    Router --> CommonComp
+    Router --> SearchComp
+    
+    AuthComp --> AuthContext
+    Pages --> AuthContext
+    Pages --> APIService
+    Pages --> UserService
+    APIService --> AuthContext
+    
+    APIService -->|HTTP/REST| AuthController
+    APIService -->|HTTP/REST| RestaurantController
+    APIService -->|HTTP/REST| UserController
+    
+    AuthController --> JwtFilter
+    RestaurantController --> JwtFilter
+    UserController --> JwtFilter
+    
+    JwtFilter --> SecurityConfig
+    RateLimitFilter --> SecurityConfig
+    JwtFilter --> UserDetailsService
+    
+    AuthController --> UserService
+    AuthController --> JwtUtil
+    
+    RestaurantController --> RestaurantService
+    UserController --> UserService
+    
+    RestaurantService --> JenaModel
+    RestaurantService --> Reasoner
+    RestaurantService --> SPARQL
+    RestaurantService --> RestaurantRepo
+    
+    UserService --> UserRepo
+    UserService --> ValidationUtil
+    
+    JenaModel --> RDFOntology
+    Reasoner --> RulesFile
+    SPARQL --> JenaModel
+    
+    RestaurantRepo --> H2DB
+    UserRepo --> H2DB
+    
+    DataLoader --> H2DB
+    DataLoader --> RDFOntology
+    
+    SwaggerConfig --> SwaggerUI
+    H2DB --> H2Console
+    
+    style Browser fill:#e1f5ff
+    style Mobile fill:#e1f5ff
+    style Pages fill:#fff4e6
+    style AuthContext fill:#fff4e6
+    style APIService fill:#fff4e6
+    style AuthController fill:#f3e5f5
+    style RestaurantController fill:#f3e5f5
+    style UserController fill:#f3e5f5
+    style SecurityConfig fill:#ffebee
+    style JwtFilter fill:#ffebee
+    style RestaurantService fill:#e8f5e9
+    style UserService fill:#e8f5e9
+    style JenaModel fill:#e8f5e9
+    style H2DB fill:#fff9c4
+    style RDFOntology fill:#fff9c4
 ```
 
----
+## Detailed Component Architecture
 
-## Detailed Search Process Flow
+### Frontend Architecture
+
+```mermaid
+graph LR
+    subgraph "React Frontend (Port 3000)"
+        subgraph "Presentation Layer"
+            A[App.js<br/>Main Application]
+            B[Pages<br/>Home, Recommendations, Search, Profile, Detail]
+            C[Components<br/>Auth, Common, Search]
+        end
+        
+        subgraph "State & Context"
+            D[AuthContext<br/>Authentication State]
+            E[Local State<br/>Component State]
+        end
+        
+        subgraph "Service Layer"
+            F[RestaurantSearchAPI<br/>Axios Client]
+            G[UserDataService<br/>User Operations]
+        end
+        
+        subgraph "Routing"
+            H[React Router<br/>Navigation]
+        end
+        
+        A --> B
+        A --> C
+        B --> D
+        C --> D
+        B --> F
+        B --> G
+        A --> H
+    end
+    
+    style A fill:#6366f1,color:#fff
+    style B fill:#8b5cf6,color:#fff
+    style C fill:#ec4899,color:#fff
+    style D fill:#10b981,color:#fff
+    style F fill:#f59e0b,color:#fff
+```
+
+### Backend Architecture
+
+```mermaid
+graph TB
+    subgraph "Spring Boot Backend (Port 8080)"
+        subgraph "REST API Layer"
+            RC[RestaurantController]
+            AC[AuthController]
+            UC[UserController]
+        end
+        
+        subgraph "Security & Filters"
+            SC[SecurityConfig]
+            JF[JwtAuthenticationFilter]
+            RLF[RateLimitingFilter]
+            CUDS[CustomUserDetailsService]
+        end
+        
+        subgraph "Service Layer"
+            RS[RestaurantService<br/>- Ontology Loading<br/>- Rule Reasoning<br/>- SPARQL Queries<br/>- Recommendation Logic]
+            US[UserService<br/>- User CRUD<br/>- Authentication]
+            JU[JwtUtil<br/>- Token Generation<br/>- Token Validation]
+            VU[ValidationUtil<br/>- Input Validation]
+        end
+        
+        subgraph "Data Access"
+            RR[RestaurantRepository<br/>JPA]
+            UR[UserRepository<br/>JPA]
+        end
+        
+        subgraph "Semantic Layer"
+            JM[Jena Model<br/>RDF Ontology]
+            RE[Rule Reasoner<br/>Hybrid Mode]
+            SQ[SPARQL Engine]
+        end
+        
+        subgraph "Configuration"
+            DL[DataLoader<br/>Initial Data]
+            SW[SwaggerConfig<br/>API Docs]
+        end
+        
+        RC --> RS
+        AC --> US
+        UC --> US
+        
+        RC --> JF
+        AC --> JF
+        UC --> JF
+        
+        JF --> SC
+        RLF --> SC
+        JF --> CUDS
+        
+        RS --> JM
+        RS --> RE
+        RS --> SQ
+        RS --> RR
+        
+        US --> UR
+        US --> JU
+        US --> VU
+        
+        RE --> JM
+        SQ --> JM
+        
+        DL --> RR
+        DL --> UR
+        DL --> JM
+    end
+    
+    style RC fill:#4f46e5,color:#fff
+    style AC fill:#4f46e5,color:#fff
+    style UC fill:#4f46e5,color:#fff
+    style RS fill:#10b981,color:#fff
+    style US fill:#10b981,color:#fff
+    style JM fill:#f59e0b,color:#fff
+```
+
+## Data Flow Architecture
+
+### Authentication Flow
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant F as Frontend
-    participant A as API Service
-    participant C as Controller
-    participant S as Service
-    participant R as RDF Ontology
-    participant D as Database
-
-    %% Advanced Search Flow
-    U->>F: Open Search Page
-    F->>F: Load Search Forms
-    U->>F: Fill Advanced Search Criteria
-    F->>A: Call searchRestaurantsAdvanced(criteria)
-    A->>A: Build Query Parameters
-    A->>A: Add JWT Token to Headers
-    A->>C: HTTP GET /api/restaurants/search/advanced
+    participant AC as AuthController
+    participant US as UserService
+    participant DB as H2 Database
+    participant JWT as JwtUtil
     
-    C->>C: Check Rate Limiting
-    C->>S: searchRestaurantsAdvanced(params)
-    S->>R: Load Restaurant Ontology
-    R-->>S: Return RDF Model
-    S->>S: Query Restaurant Resources
-    S->>S: Convert RDF to Restaurant Objects
-    S->>S: Apply Search Filters
-    
-    loop For Each Restaurant
-        S->>S: Check matchesAdvancedSearchCriteria()
-        alt Restaurant Matches
-            S->>S: Add to Results List
-        else Restaurant Doesn't Match
-            S->>S: Skip Restaurant
-        end
-    end
-    
-    S->>S: Sort Results
-    S-->>C: Return Restaurant List
-    C-->>A: Return ApiResponse JSON
-    A-->>F: Return Search Results
-    F->>F: Update State with Results
-    F->>U: Display Restaurant Cards
-    
-    %% User Actions
-    U->>F: Click Save Button
-    F->>F: Save to LocalStorage
-    F->>U: Show Success Message
-    
-    U->>F: Click View Details
-    F->>A: Call getRestaurantById(id)
-    A->>C: HTTP GET /api/restaurants/{id}
-    C->>S: getRestaurantById(id)
-    S->>R: Query Specific Restaurant
-    R-->>S: Return Restaurant Data
-    S-->>C: Return Restaurant Object
-    C-->>A: Return Restaurant JSON
-    A-->>F: Return Restaurant Details
-    F->>F: Navigate to Detail Page
+    U->>F: Login Request
+    F->>AC: POST /api/auth/login
+    AC->>US: authenticate()
+    US->>DB: Find User
+    DB-->>US: User Data
+    US->>JWT: Generate Token
+    JWT-->>US: JWT Token
+    US-->>AC: AuthResponse
+    AC-->>F: JWT Token
+    F->>F: Store in AuthContext
+    F-->>U: Authenticated
 ```
 
----
+### Recommendation Flow
 
-## Data Flow Architecture
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant RC as RestaurantController
+    participant RS as RestaurantService
+    participant JM as Jena Model
+    participant RE as Rule Reasoner
+    participant SQ as SPARQL Engine
+    participant DB as H2 Database
+    
+    U->>F: Request Recommendations
+    F->>RC: POST /api/restaurants/recommendations
+    RC->>RS: getRestaurantRecommendations()
+    RS->>JM: Load RDF Ontology
+    JM-->>RS: Ontology Model
+    RS->>JM: Create User Instance
+    RS->>RE: Apply Rules (Hybrid)
+    RE->>JM: Infer Recommendations
+    RS->>SQ: Execute SPARQL Query
+    SQ->>JM: Query Inferred Model
+    JM-->>SQ: Restaurant URIs + Confidence
+    RS->>DB: Fetch Restaurant Details
+    DB-->>RS: Restaurant Data
+    RS->>RS: Calculate Match Scores
+    RS-->>RC: Sorted Recommendations
+    RC-->>F: JSON Response
+    F-->>U: Display Results
+```
+
+## Technology Stack
+
+### Frontend Stack
+- **React 19.1.1** - UI Library
+- **Material-UI 7.3.1** - Component Library
+- **React Router 7.8.2** - Routing
+- **React Hook Form 7.62.0** - Form Management
+- **Axios 1.11.0** - HTTP Client
+- **Yup 1.7.0** - Schema Validation
+- **React Leaflet** - Map Integration
+
+### Backend Stack
+- **Spring Boot 3.4.4** - Framework
+- **Spring Security** - Authentication & Authorization
+- **Spring Data JPA** - Data Persistence
+- **H2 Database** - In-Memory Database
+- **Apache Jena 4.3.2** - Semantic Web & RDF
+- **JWT (jjwt 0.11.5)** - Token Authentication
+- **Swagger/OpenAPI** - API Documentation
+
+## Security Architecture
+
+```mermaid
+graph TB
+    subgraph "Security Layers"
+        A[Rate Limiting Filter<br/>Request Throttling]
+        B[JWT Authentication Filter<br/>Token Validation]
+        C[Spring Security Config<br/>CORS, Authentication Rules]
+        D[Custom User Details Service<br/>User Authentication]
+        E[Password Encoder<br/>BCrypt]
+    end
+    
+    Request[Incoming Request] --> A
+    A -->|Valid| B
+    A -->|Rate Limited| Reject[429 Too Many Requests]
+    B -->|No Token| Public[Public Endpoints]
+    B -->|Invalid Token| Unauthorized[401 Unauthorized]
+    B -->|Valid Token| C
+    C --> D
+    D --> E
+    D -->|Authenticated| Protected[Protected Endpoints]
+    
+    style A fill:#ffebee
+    style B fill:#ffebee
+    style C fill:#ffebee
+    style D fill:#e8f5e9
+    style E fill:#e8f5e9
+```
+
+## API Endpoints Architecture
 
 ```mermaid
 graph LR
-    subgraph "Data Sources"
-        A[RDF Ontology File<br/>RestaurantOntology_03_12_24.rdf]
-        B[Rules File<br/>rule.rules]
-        C[H2 Database<br/>Sample Data]
+    subgraph "Public Endpoints"
+        P1[GET /api/restaurants/all]
+        P2[GET /api/restaurants/search]
+        P3[GET /api/restaurants/{id}]
+        P4[POST /api/auth/register]
+        P5[POST /api/auth/login]
     end
-
-    subgraph "Backend Processing"
-        D[RestaurantService<br/>Load & Process Data]
-        E[Apache Jena<br/>RDF Processing]
-        F[Rule Engine<br/>Apply Business Rules]
+    
+    subgraph "Protected Endpoints"
+        PR1[POST /api/restaurants/recommendations]
+        PR2[GET /api/restaurants/search/advanced]
+        PR3[GET /api/users]
+        PR4[GET /api/users/{id}]
+        PR5[PUT /api/users/{id}]
     end
-
-    subgraph "API Layer"
-        G[RestaurantController<br/>Handle Requests]
-        H[Authentication<br/>JWT Token Validation]
-        I[Rate Limiting<br/>Prevent Abuse]
+    
+    subgraph "Admin Endpoints"
+        A1[DELETE /api/users/{id}]
+        A2[POST /api/users]
     end
+    
+    P1 --> JWT[JWT Filter]
+    P2 --> JWT
+    P3 --> JWT
+    P4 --> JWT
+    P5 --> JWT
+    
+    PR1 --> JWT
+    PR2 --> JWT
+    PR3 --> JWT
+    PR4 --> JWT
+    PR5 --> JWT
+    
+    A1 --> JWT
+    A2 --> JWT
+    
+    JWT -->|Valid| Allow[Allow Request]
+    JWT -->|Invalid| Deny[Deny Request]
+    
+    style P1 fill:#e8f5e9
+    style P2 fill:#e8f5e9
+    style P3 fill:#e8f5e9
+    style PR1 fill:#fff9c4
+    style PR2 fill:#fff9c4
+    style A1 fill:#ffebee
+```
 
-    subgraph "Frontend Processing"
-        J[RestaurantSearchAPI<br/>API Calls]
-        K[Search Forms<br/>User Input]
-        L[SearchResults<br/>Display Cards]
-        M[UserDataService<br/>Local Storage]
+## Semantic Reasoning Architecture
+
+```mermaid
+graph TB
+    subgraph "Semantic Layer"
+        A[RDF Ontology File<br/>RestaurantOntology.rdf]
+        B[Rule File<br/>rule.rules]
+        C[Jena Model Factory<br/>Load Ontology]
+        D[Rule Reasoner<br/>Hybrid Mode]
+        E[Inferred Model<br/>InfModel]
+        F[SPARQL Query<br/>SELECT ?restaurant ?confidence]
+        G[Query Results<br/>Restaurant URIs + Scores]
     end
-
-    subgraph "User Interface"
-        N[Search Page<br/>Modern UI]
-        O[Restaurant Cards<br/>Interactive Display]
-        P[Save Functionality<br/>Local Persistence]
-    end
-
-    A --> D
-    B --> F
+    
+    A --> C
+    B --> D
     C --> D
     D --> E
     E --> F
     F --> G
-    G --> H
-    H --> I
-    I --> J
-    J --> K
-    K --> L
-    L --> M
-    M --> N
-    N --> O
-    O --> P
-
-    %% Styling
-    classDef dataSource fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef backend fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef api fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef frontend fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef ui fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-
-    class A,B,C dataSource
-    class D,E,F backend
-    class G,H,I api
-    class J,K,L,M frontend
-    class N,O,P ui
+    
+    subgraph "User Request"
+        H[User Preferences<br/>Runner Type, Budget, Nutrition]
+    end
+    
+    H --> C
+    C --> I[Create User Instance<br/>in RDF Model]
+    I --> D
+    
+    G --> J[Match with Database<br/>Fetch Restaurant Details]
+    J --> K[Calculate Match Scores<br/>Sort by Confidence]
+    
+    style A fill:#f59e0b
+    style B fill:#f59e0b
+    style D fill:#10b981
+    style E fill:#10b981
+    style F fill:#6366f1
 ```
 
----
-
-## Search Criteria Matching Flow
-
-```mermaid
-flowchart TD
-    A[Restaurant Object] --> B{Check Restaurant Name}
-    B -->|Match| C{Check Cuisine Type}
-    B -->|No Match| Z[Skip Restaurant]
-    
-    C -->|Match| D{Check Restaurant Type}
-    C -->|No Match| Z
-    
-    D -->|Match| E{Check Location}
-    D -->|No Match| Z
-    
-    E -->|Match| F{Check Nationality}
-    E -->|No Match| Z
-    
-    F -->|Match| G{Check Budget Range}
-    F -->|No Match| Z
-    
-    G -->|Within Range| H{Check Nutrition Levels}
-    G -->|Out of Range| Z
-    
-    H -->|Match| I{Check Runner Type}
-    H -->|No Match| Z
-    
-    I -->|Match| J[Add to Results]
-    I -->|No Match| Z
-    
-    J --> K[Continue to Next Restaurant]
-    Z --> K
-    K --> L{More Restaurants?}
-    L -->|Yes| A
-    L -->|No| M[Sort Results]
-    M --> N[Return Final Results]
-
-    %% Styling
-    classDef check fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef match fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef skip fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef result fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-
-    class A,B,C,D,E,F,G,H,I check
-    class J,K,L,M,N match
-    class Z skip
-    class M,N result
-```
-
----
-
-## Error Handling Flow
-
-```mermaid
-graph TD
-    A[API Request] --> B{Authentication Check}
-    B -->|Valid Token| C{Rate Limiting Check}
-    B -->|Invalid/Expired| D[Return 401 Error]
-    
-    C -->|Within Limit| E[Process Request]
-    C -->|Exceeded Limit| F[Return 429 Error]
-    
-    E --> G{Data Processing}
-    G -->|Success| H[Return Results]
-    G -->|Error| I[Return 500 Error]
-    
-    D --> J[Frontend: Show Auth Alert]
-    F --> K[Frontend: Show Rate Limit Alert]
-    I --> L[Frontend: Show Error Message]
-    H --> M[Frontend: Display Results]
-    
-    J --> N[Redirect to Login Page]
-    K --> O[Show Retry Button]
-    L --> P[Show Error Details]
-    M --> Q[User Can Interact]
-
-    %% Styling
-    classDef error fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef success fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef warning fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef info fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-
-    class D,F,I,J,K,L error
-    class H,M,Q success
-    class C,F,K,O warning
-    class A,B,E,G info
-```
-
----
-
-## User Interaction Flow
-
-```mermaid
-stateDiagram-v2
-    [*] --> SearchPage
-    
-    SearchPage --> AdvancedSearch : Click Advanced Tab
-    SearchPage --> QuickSearch : Click Quick Tab
-    SearchPage --> BrowseAll : Click Browse Tab
-    
-    AdvancedSearch --> FillingForm : User Types Criteria
-    QuickSearch --> FillingForm : User Types Criteria
-    BrowseAll --> LoadingAll : Auto Load All Restaurants
-    
-    FillingForm --> SubmittingSearch : Click Search Button
-    LoadingAll --> ShowingResults : Data Loaded
-    
-    SubmittingSearch --> LoadingResults : API Call
-    LoadingResults --> ShowingResults : Results Received
-    LoadingResults --> ErrorState : API Error
-    
-    ShowingResults --> ViewingCard : User Scrolls Results
-    ViewingCard --> SavingRestaurant : Click Save Button
-    ViewingCard --> ViewingDetails : Click View Details
-    
-    SavingRestaurant --> SavedState : Save Success
-    SavedState --> ViewingCard : Continue Browsing
-    
-    ViewingDetails --> DetailPage : Navigate to Details
-    DetailPage --> SearchPage : Back to Search
-    
-    ErrorState --> RetryingSearch : Click Retry
-    RetryingSearch --> LoadingResults : Retry API Call
-    
-    ErrorState --> SearchPage : Go Back
-    ShowingResults --> SearchPage : New Search
-```
-
----
-
-## Performance Optimization Flow
+## Deployment Architecture
 
 ```mermaid
 graph TB
-    subgraph "Frontend Optimizations"
-        A[Debounced Search Input] --> B[State Management]
-        B --> C[Component Memoization]
-        C --> D[Lazy Loading]
+    subgraph "Development Environment"
+        FE[React Dev Server<br/>localhost:3000]
+        BE[Spring Boot App<br/>localhost:8080]
+        H2[H2 In-Memory DB<br/>Embedded]
     end
-
-    subgraph "API Optimizations"
-        E[Request Caching] --> F[Parameter Validation]
-        F --> G[Response Compression]
-        G --> H[Error Retry Logic]
+    
+    subgraph "Production Environment (Future)"
+        LB[Load Balancer]
+        FE1[React Build<br/>Static Files]
+        FE2[React Build<br/>Static Files]
+        BE1[Spring Boot<br/>Instance 1]
+        BE2[Spring Boot<br/>Instance 2]
+        DB[(PostgreSQL/MySQL<br/>Production DB)]
+        Cache[(Redis Cache<br/>Optional)]
     end
-
-    subgraph "Backend Optimizations"
-        I[Rate Limiting] --> J[Connection Pooling]
-        J --> K[Query Optimization]
-        K --> L[Result Caching]
-    end
-
-    subgraph "Data Optimizations"
-        M[RDF Model Caching] --> N[Indexed Queries]
-        N --> O[Batch Processing]
-        O --> P[Memory Management]
-    end
-
-    A --> E
-    E --> I
-    I --> M
-
-    %% Styling
-    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef api fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef backend fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef data fill:#fff3e0,stroke:#e65100,stroke-width:2px
-
-    class A,B,C,D frontend
-    class E,F,G,H api
-    class I,J,K,L backend
-    class M,N,O,P data
+    
+    FE --> BE
+    BE --> H2
+    
+    LB --> FE1
+    LB --> FE2
+    FE1 --> BE1
+    FE2 --> BE2
+    BE1 --> DB
+    BE2 --> DB
+    BE1 --> Cache
+    BE2 --> Cache
+    
+    style FE fill:#e1f5ff
+    style BE fill:#f3e5f5
+    style H2 fill:#fff9c4
+    style DB fill:#fff9c4
+    style Cache fill:#ffebee
 ```
 
----
-
-## Technology Stack Flow
+## Component Interaction Diagram
 
 ```mermaid
 graph TB
-    subgraph "Frontend Technologies"
-        A[React.js] --> B[Material-UI]
-        B --> C[React Router]
-        C --> D[Axios/Fetch]
-        D --> E[LocalStorage]
+    subgraph "User Interface"
+        UI[User Interface<br/>React Components]
     end
-
-    subgraph "Backend Technologies"
-        F[Spring Boot] --> G[Spring Security]
-        G --> H[Spring Data JPA]
-        H --> I[Apache Jena]
-        I --> J[H2 Database]
+    
+    subgraph "API Layer"
+        API[REST Controllers<br/>JSON API]
     end
-
-    subgraph "Data Technologies"
-        K[RDF Ontology] --> L[SPARQL Queries]
-        L --> M[Rule Engine]
-        M --> N[Semantic Reasoning]
+    
+    subgraph "Business Logic"
+        BL[Services<br/>Business Rules]
     end
-
-    subgraph "Infrastructure"
-        O[Maven Build] --> P[Tomcat Server]
-        P --> Q[Cross-Origin Support]
-        Q --> R[Rate Limiting]
+    
+    subgraph "Data Sources"
+        DB[(Relational Data<br/>H2 Database)]
+        ONT[(Semantic Data<br/>RDF Ontology)]
     end
-
-    A --> F
-    F --> K
-    K --> O
-
-    %% Styling
-    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef backend fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef data fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef infra fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-
-    class A,B,C,D,E frontend
-    class F,G,H,I,J backend
-    class K,L,M,N data
-    class O,P,Q,R infra
+    
+    UI -->|HTTP Requests| API
+    API -->|Service Calls| BL
+    BL -->|JPA Queries| DB
+    BL -->|SPARQL Queries| ONT
+    BL -->|Reasoning| ONT
+    ONT -->|Inferred Data| BL
+    DB -->|Entity Data| BL
+    BL -->|Business Objects| API
+    API -->|JSON Response| UI
+    
+    style UI fill:#e1f5ff
+    style API fill:#f3e5f5
+    style BL fill:#e8f5e9
+    style DB fill:#fff9c4
+    style ONT fill:#f59e0b
 ```
 
----
+## Key Architectural Patterns
 
-**Last Updated**: December 2024  
-**Version**: 1.0.0 (Complete Process Flow Diagrams)
+1. **Layered Architecture**: Clear separation between Presentation, Business Logic, and Data layers
+2. **RESTful API**: Stateless REST endpoints for frontend-backend communication
+3. **Semantic Web**: RDF ontology for intelligent reasoning and recommendations
+4. **Security First**: JWT-based authentication with rate limiting
+5. **Component-Based Frontend**: Modular React components with context-based state management
+6. **Service-Oriented Backend**: Service layer encapsulates business logic
+7. **Repository Pattern**: Data access abstraction through JPA repositories
+
+## Performance Considerations
+
+- **Caching**: Ontology model caching in RestaurantService
+- **Rate Limiting**: API protection against abuse
+- **Lazy Loading**: Frontend code splitting
+- **Database Indexing**: JPA automatic indexing
+- **SPARQL Optimization**: Efficient query patterns
+
+## Scalability Considerations
+
+- **Stateless Backend**: JWT tokens enable horizontal scaling
+- **In-Memory Database**: H2 suitable for development, production needs PostgreSQL/MySQL
+- **Semantic Reasoning**: Can be optimized with caching strategies
+- **Frontend CDN**: Static assets can be served via CDN
+- **API Gateway**: Can add API gateway for production deployment
+
